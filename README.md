@@ -5,4 +5,4 @@ The aim of this project is to provide analytical insights on this topic.
 
 Wordcloud with the most common words used during the week when this hashtag was viral.
 
-![alt text](https://github.com/fercook/cuentalo/figures/cu.png)
+![wordcloud](https://github.com/fercook/cuentalo/blob/master/figures/cu.png)
