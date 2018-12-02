@@ -4,17 +4,21 @@ import json
 import math
 from datetime import timedelta
 
+# para viejo se recomienda THRESHOLD_BLUR_TESTIMONIO: 0.5 y BLUR_TESTIMONIOS=0.3
+METODO = 'viejo' # o 'nuevo'
+# para nuevo se recomienda THRESHOLD_BLUR_TESTIMONIO = 0.95 BLUR_TESTIMONIOS = 0.2
+
 THRESHOLD_TROLLS =.75 #arriba de esto son tweets raros
 ANGLE_NOISE = 1 #in degrees
 INTERNAL_RADIUS = 0.7
 BLUR_TESTIMONIOS = 0.2
-THRESHOLD_BLUR_TESTIMONIO = 0.95
-BLUR_APOYO = 0.2
+THRESHOLD_BLUR_TESTIMONIO = 0.5
+BLUR_APOYO = 0.15
 THRESHOLD_BLUR_APOYO = 0.95
-SCALE_APOYO = 0.7 
+SCALE_APOYO = 1 
 SCALE_OTROS = 2
 PUSH_OTROS = 2
-COLUMNAS_A_CONSERVAR = ['id','created_at','pais_clean','user_followers_count','retweet_count','full_text']
+COLUMNAS_A_CONSERVAR = ['id','created_at','pais_clean','user_followers_count','retweet_count','full_text','user_name','user_screen_name']
 
 #
 # generamos un dataset resumido
@@ -143,10 +147,16 @@ prob_summary=prob_summary[prob_summary['pred_otros_trolls']<0.75]
 prob_summary['angle']=math.pi/2-2*math.pi*prob_summary.groups_circle/1440+ANGLE_NOISE*np.random.randn(len(prob_summary))/360
 
 #radius
-testimonio = BLUR_TESTIMONIOS*np.random.randn(len(prob_summary)) *( np.where(prob_summary['pred_1a2a_persona']>THRESHOLD_BLUR_TESTIMONIO,prob_summary['pred_1a2a_persona'],0))
-# th: 0.5 y blur=0.3
-# BLUR_TESTIMONIOS*np.random.randn(len(prob_summary)) *( (1+THRESHOLD_BLUR_TESTIMONIO)-prob_summary['pred_1a2a_persona'] )+ 
-apoyo = SCALE_APOYO*(prob_summary['pred_apoyo']+BLUR_APOYO*np.random.randn(len(prob_summary))*( np.where(prob_summary['pred_apoyo']>THRESHOLD_BLUR_APOYO,prob_summary['pred_apoyo'],0)))
+if METODO=='nuevo':
+    testimonio = BLUR_TESTIMONIOS*np.random.randn(len(prob_summary)) *( np.where(prob_summary['pred_1a2a_persona']>THRESHOLD_BLUR_TESTIMONIO,prob_summary['pred_1a2a_persona'],0))
+    # th: 0.5 y blur=0.3
+    # BLUR_TESTIMONIOS*np.random.randn(len(prob_summary)) *( (1+THRESHOLD_BLUR_TESTIMONIO)-prob_summary['pred_1a2a_persona'] )+ 
+    apoyo = SCALE_APOYO*(prob_summary['pred_apoyo']+BLUR_APOYO*np.random.randn(len(prob_summary))*( np.where(prob_summary['pred_apoyo']>THRESHOLD_BLUR_APOYO,prob_summary['pred_apoyo'],0)))
+else:
+    # th: 0.5 y blur=0.3
+    testimonio =  BLUR_TESTIMONIOS*np.random.randn(len(prob_summary)) *( (1+THRESHOLD_BLUR_TESTIMONIO)-prob_summary['pred_1a2a_persona'] )
+    apoyo = SCALE_APOYO*prob_summary['pred_apoyo']
+    
 otros = SCALE_OTROS*np.exp(PUSH_OTROS*prob_summary['pred_otros_trolls'])
 prob_summary['radius'] = testimonio +  apoyo +  otros  - INTERNAL_RADIUS
 
@@ -170,7 +180,7 @@ for i in intcols:
 
 # separamos en coordenadas e info extra por tweet
 cols_for_coords = ['retweet_count','x','y']
-other_cols = ['hora_local','pais_clean','user_followers_count','full_text','pred_1a2a_persona','pred_apoyo','pred_otros_trolls','pred_fisico','pred_no_fisico','pred_otros']
+other_cols = ['hora_local','pais_clean','user_followers_count','full_text','pred_1a2a_persona','pred_apoyo','pred_otros_trolls','pred_fisico','pred_no_fisico','pred_otros','user_name','user_screen_name']
 
 prob_summary[cols_for_coords].to_csv("OUT_coordenadas_cuentalo.csv")
 prob_summary[other_cols].to_csv("OUT_details_cuentalo.csv")
