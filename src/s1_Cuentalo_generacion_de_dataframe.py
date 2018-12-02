@@ -43,7 +43,10 @@ def extractUser(tweet,root=''):
     attrs_to_extract = ['id','name','screen_name','followers_count','statuses_count','created_at']
     for attr in attrs_to_extract:
         if 'user' in tweet and attr in tweet['user']:
-            tweetUser[root+'user_'+attr]=tweet['user'][attr]  
+            if attr=='id' and 'id_str' in tweet['user']:
+                tweetUser[root+'user_'+attr]=np.int64(tweet['user'][attr+'_str'])
+            else:
+                tweetUser[root+'user_'+attr]=tweet['user'][attr]  
         else:
             tweetUser[root+'user_'+attr]=None
     return tweetUser
@@ -54,7 +57,10 @@ def extractGeneralInfo(tweet,root=''):
     tweetInfo={}
     attrs_to_extract = ['id','retweet_count','favorite_count','full_text','quote_count','created_at']
     for attr in attrs_to_extract:
-        tweetInfo[root+attr]=tweet[attr] if attr in tweet else None
+        if attr=='id':
+            tweetInfo[root+attr]=np.int64(tweet[attr+"_str"]) if attr+"_str" in tweet else None
+        else:
+            tweetInfo[root+attr]=tweet[attr] if attr in tweet else None
     return tweetInfo
         
 # info from https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/tweet-object
@@ -71,11 +77,11 @@ def extractInfo(tweet):
     # type of tweet and get parent tweet included
     if tweet['in_reply_to_status_id']!=None: # reply
         tweetInfo['tweet_type']='reply'
-        subtweet={ 'id': tweet['in_reply_to_status_id'], 'user': {'id': tweet['in_reply_to_user_id']}}        
+        subtweet={ 'id': np.int64(tweet['in_reply_to_status_id_str']), 'user': {'id': np.int64(tweet['in_reply_to_user_id_str'])}}        
     elif 'quoted_status' in tweet: # quote
         tweetInfo['tweet_type']='quote'
         subtweet = tweet['quoted_status']
-        subtweet['id']=tweet['quoted_status_id']                      
+        subtweet['id']=np.int64(tweet['quoted_status_id_str'])
     elif'retweeted_status' in tweet and tweet['retweeted_status']!=None: # retweet
         tweetInfo['tweet_type']='retweet'
         subtweet = tweet['retweeted_status']
@@ -92,6 +98,24 @@ def extractInfo(tweet):
                     
     return tweetInfo
 
+def generate_dataframe(jsonl_input_file,output_pickle):
+    tweets={}
+    tweetfile=open(jsonl_input_file)
+    for idx,line in enumerate(tweetfile):
+        if idx>100000000: # cap for testing
+            break
+        tweet=json.loads(line)
+        tweetID = np.int64(tweet['id_str']) 
+        tweets[tweetID]=extractInfo(tweet)
+    tweetfile.close()
+    print('Read :',len(tweets),'tweets')
+    df=pd.DataFrame(tweets).transpose()
+    #generar fichero
+    output_name = jsonl_input_file.split("/")[-1].split(".jsonl")[0]
+    df.to_pickle(output_pickle)
+
+
+"""
 tweets={}
 tweetfile=open("../data/Aniol-Maria-cuentalo-search-20180427_20180513.jsonl")
 for idx,line in enumerate(tweetfile):
@@ -145,7 +169,7 @@ df=pd.DataFrame(tweets).transpose()
 
 #generar fichero
 df.to_pickle("../pickles/cuentalo_json_to_extra_2.pkl")
-
+"""
 
 
 

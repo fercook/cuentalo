@@ -46,7 +46,8 @@ def clean_pickle(infile,outfile):
 	'''
 	df.to_pickle(outfile)
 
-
+"""
 clean_pickle("../pickles/cuentalo_json_to.pkl", "../pickles/cuentalo_clean_1.pkl")
 clean_pickle("../pickles/cuentalo_json_to_extra_1.pkl", "../pickles/cuentalo_clean_extra_1.pkl")
 clean_pickle("../pickles/cuentalo_json_to_extra_2.pkl", "../pickles/cuentalo_clean_extra_2.pkl")
+"""
