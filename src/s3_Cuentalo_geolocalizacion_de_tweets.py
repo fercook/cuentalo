@@ -5,11 +5,6 @@ import pandas as pd
 import numpy as np
 import json
 
-
-# # Getting some info from JSON file
-df = pd.read_pickle("../pickles/cuentalo_clean_1.pkl")
-
-
 # # Vamos a geolocalizar tweets
 
 # ### Bajamos paises y ciudades
@@ -176,23 +171,30 @@ def localize_tweet(row):
     # nothing reaches here
     return -8,(mentioned_cities,mentioned_countries,tz) # este error no deberia aparecer a menos que no hayamos visto todos los casos
 
-# esto tarda MUCHO -- cuidado
-count=0
-final_bundle=[]
-for idx,row in df.iterrows():
-    tr, ans =localize_tweet(row)
-    bundle = [idx,ans[0],ans[1],tr]
-    if row['parent_id']>0:
-        query={'country':row['parent_country'],
-               'place':row['parent_place'],
-               'time_zone':row['parent_time_zone'],
-               'location':row['parent_location']}
-        tr, ans =localize_tweet(query)
-        parent_bundle = [ans[0],ans[1],tr]
-    else:
-        parent_bundle = [None,None,None]   
-    final_bundle.append(bundle+parent_bundle)
 
-final_bundle_pd=pd.DataFrame(final_bundle)
-final_bundle_pd.columns=["tweet_id","ciudad_clean","pais_clean","location_diagnosis","parent_ciudad_clean","parent_pais_clean","parent_location_diagnosis"]
-final_bundle_pd.to_csv("../intermediate_data/final_locations.csv",index=False)
+def localize_tweets(pickle_file,locations_file):
+    # # Getting some info from JSON file
+    """df = pd.read_pickle("../pickles/cuentalo_clean_1.pkl")"""
+    df = pd.read_pickle(pickle_file)
+    # esto tarda MUCHO -- cuidado
+    count=0
+    final_bundle=[]
+    for idx,row in df.iterrows():
+        tr, ans =localize_tweet(row)
+        bundle = [idx,ans[0],ans[1],tr]
+        if row['parent_id']>0:
+            query={'country':row['parent_country'],
+                'place':row['parent_place'],
+                'time_zone':row['parent_time_zone'],
+                'location':row['parent_location']}
+            tr, ans =localize_tweet(query)
+            parent_bundle = [ans[0],ans[1],tr]
+        else:
+            parent_bundle = [None,None,None]   
+        final_bundle.append(bundle+parent_bundle)
+
+    final_bundle_pd=pd.DataFrame(final_bundle)
+    final_bundle_pd.columns=["tweet_id","ciudad_clean","pais_clean","location_diagnosis","parent_ciudad_clean","parent_pais_clean","parent_location_diagnosis"]
+    final_bundle_pd.to_csv(locations_file,index=False)
+    """    final_bundle_pd.to_csv("../intermediate_data/final_locations.csv",index=False)"""
+
