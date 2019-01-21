@@ -4,15 +4,15 @@ import json
 import math
 from datetime import timedelta
 
-# para viejo se recomienda THRESHOLD_BLUR_TESTIMONIO: 0.5 y BLUR_TESTIMONIOS=0.3
 METODO = 'viejo' # o 'nuevo'
+# para viejo se recomienda THRESHOLD_BLUR_TESTIMONIO: 0.5 y BLUR_TESTIMONIOS=0.3
 # para nuevo se recomienda THRESHOLD_BLUR_TESTIMONIO = 0.95 BLUR_TESTIMONIOS = 0.2
 
 THRESHOLD_TROLLS =.75 #arriba de esto son tweets raros
 ANGLE_NOISE = 1 #in degrees
 INTERNAL_RADIUS = 0.7
-BLUR_TESTIMONIOS = 0.2
-THRESHOLD_BLUR_TESTIMONIO = 0.5
+BLUR_TESTIMONIOS = 0.3
+THRESHOLD_BLUR_TESTIMONIO = 0.4
 BLUR_APOYO = 0.15
 THRESHOLD_BLUR_APOYO = 0.95
 SCALE_APOYO = 1 
@@ -32,15 +32,18 @@ summary.full_text=summary.full_text.apply(lambda x: x.replace('\n', '.') if x!=N
 
 #
 # Probabilidades de categorias
-probabilities = pd.read_csv("../data/df_predicted_probs_originals.csv",)
+predict_who = pd.read_csv("../tweet_preds/df_only_preds_who_2.csv",).set_index('id')
+predict_what = pd.read_csv("../tweet_preds/df_only_preds_what_2.csv",).set_index('id')
+probabilities = predict_who.join(predict_what)
 
-probabilities=probabilities[['id','pred_1a2a_persona','pred_apoyo','pred_otros_trolls','pred_fisico','pred_no_fisico','pred_otros']]
-probabilities=probabilities[~probabilities.id.isna()]
-probabilities.id= probabilities.id.astype(np.int)
+#probabilities = pd.read_csv("../data/df_predicted_probs_originals.csv",)
+#probabilities=probabilities[['id','pred_1a2a_persona','pred_apoyo','pred_otros_trolls','pred_fisico','pred_no_fisico','pred_otros']]
+#probabilities=probabilities[~probabilities.id.isna()]
+#probabilities.id= probabilities.id.astype(np.int)
+#probabilities = probabilities.set_index('id')
 
 # preparamos para el join
 summary=summary.set_index('id')
-probabilities = probabilities.set_index('id')
 prob_summary = summary.join(probabilities)
 
 ### Corregimos la hora a hora local (donde se puede)
@@ -179,7 +182,7 @@ for i in intcols:
     prob_summary[i] = prob_summary[i].astype(np.int).astype('str')
 
 # separamos en coordenadas e info extra por tweet
-cols_for_coords = ['retweet_count','x','y']
+cols_for_coords = ['retweet_count','x','y','pais_clean','retweet_count']
 other_cols = ['hora_local','pais_clean','user_followers_count','full_text','pred_1a2a_persona','pred_apoyo','pred_otros_trolls','pred_fisico','pred_no_fisico','pred_otros','user_name','user_screen_name']
 
 prob_summary[cols_for_coords].to_csv("OUT_coordenadas_cuentalo.csv")
